@@ -1,0 +1,7 @@
+**/.terraform/*
+*.lock
+*.lock.*
+*.tfstate
+*.tfstate.*
+*.mod
+*.sum
