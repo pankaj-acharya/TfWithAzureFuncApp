@@ -1,10 +1,10 @@
 locals {
-    project                     = "sspr"
+    project                     = "tffuncapp"
     environment                 = "dev"
     location                    = "uksouth"
     vnet_address_space          = "10.13.0.0/24"
     functionapp_address_prefixes = "10.13.0.0/28"
-    tenant_id                   = "1cc2f5af-92fa-4b2a-ac02-b97a9c8a75d3"
+    tenant_id                   = ""
 
     resource_group_name = "SSPR_Azure_App"#format("%s-%s-rg", local.project, local.environment)
     vnet_name           = format("vnet-%s-%s", local.project, local.environment)
