@@ -1,0 +1,62 @@
+# Pipeline to build and deploy Azure resources using Terraform
+trigger:
+- main  # Trigger pipeline on changes to the main branch
+
+pool:
+  vmImage: 'ubuntu-latest'  # Use the latest Ubuntu image for the pipeline agent
+
+variables:
+  # Define variables for Azure authentication
+  AZURE_SUBSCRIPTION_ID: '<your-subscription-id>'  # Replace with your Azure subscription ID
+  AZURE_CLIENT_ID: '<your-client-id>'  # Replace with your Azure service principal client ID
+  AZURE_CLIENT_SECRET: '<your-client-secret>'  # Replace with your Azure service principal client secret
+  AZURE_TENANT_ID: '<your-tenant-id>'  # Replace with your Azure tenant ID
+  RESOURCE_GROUP_NAME: 'my-resource-group'  # Name of the resource group to create
+  LOCATION: 'eastus'  # Azure region for the resource group
+  ENV_FOLDER: 'dev'  # Environment folder to look at (e.g., dev, prod)
+
+stages:
+- stage: BuildAndDeploy
+  displayName: Build and Deploy
+  jobs:
+  - job: DeployResourceGroup
+    displayName: Deploy Resource Group
+    steps:
+    - script: |
+        echo "Logging in to Azure using Service Principal..."
+        az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+        echo "Logged in successfully."
+
+        echo "Setting Azure subscription..."
+        az account set --subscription $AZURE_SUBSCRIPTION_ID
+        echo "Azure subscription set to $AZURE_SUBSCRIPTION_ID."
+
+        echo "Creating resource group..."
+        az group create --name $RESOURCE_GROUP_NAME --location $LOCATION
+        echo "Resource group $RESOURCE_GROUP_NAME created in $LOCATION."
+      displayName: 'Login and Deploy Resource Group'
+
+    - script: |
+        echo "Looking for environment folder: $ENV_FOLDER..."
+        ls env/$ENV_FOLDER
+        echo "Modules folder content:"
+        ls modules
+      displayName: 'List Environment and Modules Folders'
+
+    - script: |
+        echo "Initializing Terraform..."
+        terraform init -backend-config="path=env/$ENV_FOLDER/backend.tfvars"
+        echo "Terraform initialization complete."
+      displayName: 'Terraform Init'
+
+    - script: |
+        echo "Running Terraform plan..."
+        terraform plan -var-file="env/$ENV_FOLDER/terraform.tfvars"
+        echo "Terraform plan complete."
+      displayName: 'Terraform Plan'
+
+    # - script: |
+    #     echo "Applying Terraform configuration..."
+    #     terraform apply -var-file="env/$ENV_FOLDER/terraform.tfvars" -auto-approve
+    #     echo "Terraform apply complete."
+    #   displayName: 'Terraform Apply'
